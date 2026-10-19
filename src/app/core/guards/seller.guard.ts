@@ -1,14 +1,16 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
+import { inject } from "@angular/core";
+import { toObservable } from "@angular/core/rxjs-interop";
+import { CanActivateFn, Router } from "@angular/router";
+import { filter, map, take } from "rxjs";
+import { AuthService } from "../services/auth.service";
 
-/** seller グループ以外のユーザーを /products にリダイレクトするガード */
 export const sellerGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  if (auth.isSeller()) {
-    return true;
-  }
-  return router.createUrlTree(['/products']);
+  return toObservable(auth.isLoading).pipe(
+    filter((isLoading) => !isLoading),
+    take(1),
+    map(() => (auth.isSeller() ? true : router.createUrlTree(["/products"]))),
+  );
 };

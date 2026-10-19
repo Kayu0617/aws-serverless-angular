@@ -1,14 +1,18 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
+import { inject } from "@angular/core";
+import { toObservable } from "@angular/core/rxjs-interop";
+import { CanActivateFn, Router } from "@angular/router";
+import { filter, map, take } from "rxjs";
+import { AuthService } from "../services/auth.service";
 
-/** 未ログインユーザーを /login にリダイレクトするガード */
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  if (auth.isAuthenticated()) {
-    return true;
-  }
-  return router.createUrlTree(['/login']);
+  return toObservable(auth.isLoading).pipe(
+    filter((isLoading) => !isLoading),
+    take(1),
+    map(() =>
+      auth.isAuthenticated() ? true : router.createUrlTree(["/login"]),
+    ),
+  );
 };
